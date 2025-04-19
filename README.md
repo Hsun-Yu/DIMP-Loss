@@ -11,6 +11,43 @@ Synthetic data augmentation via Large Language Models (LLMs) allows researchers 
 conda env create -f environment.yml
 conda activate dimp
 ```
+
+<!-- ## Requirements
+
+To set up the environment for this project, ensure you have the following dependencies installed. You can use the provided `environment.yml` file to create a Conda environment or manually install the required packages: -->
+
+<!-- ### Using Conda
+```bash
+conda env create -f environment.yml
+conda activate dimp
+``` -->
+
+## Installation
+If you prefer manual installation, ensure the following packages are installed:
+
+- `torch==2.4.1`
+- `transformers==4.46.2`
+- `accelerate==1.2.1`
+- `wandb`
+- `datasets`
+- `evaluate`
+
+```bash
+conda install pytorch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 pytorch-cuda=12.4 -c pytorch -c nvidia
+
+pip install transformers==4.46.2
+
+pip install accelerate==1.2.1
+
+pip install wandb
+
+pip install datasets
+
+pip install evaluate
+
+pip install scikit-learn
+```
+
 ## Fine-tuning with DIMP-Loss for MRPC
 
 To train the BERT model with DIMP-Loss, you can either use your own trained quality checker model or the one we provide. If using your own model, update the `twomodelloss_wandb_model2` parameter with the corresponding W&B artifact name. Ensure the quality checker model is uploaded as an artifact to W&B.
@@ -18,7 +55,7 @@ To train the BERT model with DIMP-Loss, you can either use your own trained qual
 Alternatively, to use our provided quality checker model, simply run:
 
 ```bash
-python run.py --config configs/config_DIMP.json
+python run.py configs/config_DIMP.json
 ```
 This command will automatically download the quality checker model from W&B and train the BERT model with DIMP-Loss using the configuration specified in `configs/config_DIMP.json`.
 
@@ -29,7 +66,7 @@ To use your own trained models as the quality checker and diversity checker, upd
 Alternatively, to use our provided quality checker and diversity checker models, run the following command:
 
 ```bash
-python run.py --config configs/config_IMP.json
+python run.py configs/config_IMP.json
 ```
 
 This command will automatically download the provided quality checker and diversity checker models from W&B and train the BERT model with IMP-Loss using the configuration specified in `configs/config_IMP.json`.
@@ -37,7 +74,7 @@ This command will automatically download the provided quality checker and divers
 ## Fine-tuning with CE-Loss (baseline) for MRPC
 
 ```bash
-python run.py --config configs/config_baseline.json
+python run.py configs/config_baseline.json
 ```
 
 ## Important Parameters

@@ -302,7 +302,7 @@ def main():
     
     run = wandb.init(
         name=data_args.name,
-        project="NLP_Data_Augmentation",
+        project="DIMP",
         anonymous="allow",
         tags=tags,
         job_type="run",

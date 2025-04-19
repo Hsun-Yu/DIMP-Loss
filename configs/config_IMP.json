@@ -29,7 +29,7 @@
     "save_model": false,
     "twomodelloss_wandb_model2": "hsunyu/NLP_Data_Augmentation/only_valid_glue_mrpc_bert:v0",
     "twomodelloss_wandb_model3": "hsunyu/NLP_Data_Augmentation/few-shot_glue_mrpc_bert_5:v0",
-    "output_dir": "/work/hsunyu08/nlp_dataaugmentation_backup/best_end",
+    "output_dir": "./output",
     "overwrite_output_dir": true,
     "do_train": true,
     "do_eval": true,

@@ -173,3 +173,6 @@ cython_debug/
 # for wandb
 wandb/
 artifacts/
+
+# output files
+output/

@@ -10,52 +10,35 @@ conda env create -f environment.yml
 conda activate ml
 ```
 
-## Dataset
-For most experiments, we used 10% of the original training set, it can be found on Wandb [https://wandb.ai/hsunyu/epfl_ml_project2/artifacts/dataset/twitter_dataset_1/v0]. However, our code automatically downloads the dataset.
+## Training the BERT Model with DIMP-Loss for MRPC
 
-## Running the Code for Our Best Model
+To train the BERT model with DIMP-Loss, you can either use your own trained quality checker model or the one we provide. If using your own model, update the `twomodelloss_wandb_model2` parameter with the corresponding W&B artifact name. Ensure the quality checker model is uploaded as an artifact to W&B.
 
-To automatically download the Twitter dataset and the model weights, run:
+Alternatively, to use our provided quality checker model, simply run:
 
 ```bash
 python run.py
 ```
+This command will automatically download the quality checker model from W&B and train the BERT model with DIMP-Loss using the configuration specified in `configs/config.json`.
 
-- **Results:** After running, results will be saved in Weights & Biases (W&B).
-- **Submission File:** A submission file will be available at `./output/test_submission.txt`.
+## Training the BERT Model with IMP-Loss for MRPC
 
-To modify hyperparameters, refer to the `config.py` file.
+To use your own trained models as the quality checker and diversity checker, update the `twomodelloss_wandb_model2` and `twomodelloss_wandb_model3` parameters, respectively. Ensure both models are uploaded as artifacts to W&B. 
 
----
-
-## Training the BERT Model with DIMP-Loss
-
-This example uses our experimental dataset (full dataset training may take longer). You can change the dataset in the `config.py` file.
-
-### Step 1: Train the BERT Model on the Validation Set
-
-Run the following command:
+Alternatively, to use our provided quality checker and diversity checker models, run the following command:
 
 ```bash
-python run.py config_val.json
+python run.py --config configs/config_IMP.json
 ```
 
-- **Results:** The trained model will be automatically saved in W&B.
-- **Next Step:** Copy the model API to the `config_train.json` file. Example: `hsunyu/epfl_ml_project2/twitter_1_only_valid_bert_base:v1`.
-
-### Step 2: Train the BERT Model with DIMP-Loss
-
-To use the previously trained model, update the `twomodelloss_wandb_model2` key in `config_train.json`. Alternatively, use the provided validation model by running:
+This command will automatically download the provided quality checker and diversity checker models from W&B and train the BERT model with IMP-Loss using the configuration specified in `configs/config_IMP.json`.
+## Training the BERT Model with CE-Loss (baseline) for MRPC
 
 ```bash
-python run.py config_train.json
+python run.py --config configs/config_baseline.json
 ```
 
-- **Note:** This will not generate a submission file because testing uses our experimental dataset.
-
----
-
-## Important Parameters in `config.py`
+## Important Parameters
 
 - **`model_name_or_path`**:  
   Specifies the pretrained model path or identifier from Hugging Face's model hub (e.g., `bert-base-uncased`, `vinai/bertweet-base`, `hsunyu/epfl_ml_project2/twitter_full_bertweet_large:v1`).
@@ -65,45 +48,26 @@ python run.py config_train.json
   Defines the task type. Examples include:
   - `"single_label_classification"`: For text classification with cross-entropy loss (CE-Loss).
   - `"single_label_classification_myloss_v2"`: For the DIMP-Loss approach.
+  - `"single_label_classification_myloss_importance"`: For the IMP-Loss approach.
 
 - **`wandb_dataset`**:  
   Specifies the W&B dataset artifact name for training and evaluation. Examples:
-  - `hsunyu/epfl_ml_project2/twitter_full_datasets:v3`: Full dataset.
-  - `hsunyu/epfl_ml_project2/twitter_dataset_1:v0`: Experimental dataset.
+  - `hsunyu/NLP_Data_Augmentation/datapoint_induction_glue_mrpc:v0`: LLM-generated data for MRPC benchmark.
 
 - **`use_wandb_model`**:  
-  Boolean indicating whether to load a pretrained model from a W&B artifact. Useful for reproducibility.
+  Boolean indicating whether to load a pretrained model from a W&B artifact. Useful for reproducibility. (This one must be set to `True` in this repo.)
 
 - **`twomodelloss_wandb_model2`**:  
-  Refers to the W&B artifact for the validation model used in DIMP-Loss training. Example: `hsunyu/epfl_ml_project2/twitter_1_only_valid_bert_base:v1`.
+  Refers to the W&B artifact for the quality checker model used in DIMP-Loss training. Example: `hsunyu/NLP_Data_Augmentation/only_valid_glue_mrpc_bert:v0`.
+
+  - **`twomodelloss_wandb_model3`**:  
+  Refers to the W&B artifact for the quality checker model used in DIMP-Loss training. Example: `hsunyu/NLP_Data_Augmentation/few-shot_glue_mrpc_bert_5:v0`.
 
 - **`per_device_train_batch_size`**:  
   Defines the batch size per device during training. Default: `128`.
 
 - **`num_train_epochs`**:  
   Specifies the total number of training epochs. Default: `3.0`.
-
-### Contrastive Learning Parameters
-We also tried self-supervise contrastive learning ([SimCSE](https://arxiv.org/abs/2104.08821)) in this project. However, it does not impact a lot in this case thus we did not discuss in main part of report. following parameters are related to contrastive learning:
-
-- **`contrastive_learning`**:  
-A boolean indicating whether to use contrastive learning during training. This approach improves representation learning by encouraging the model to distinguish between similar and dissimilar samples.
-
-- **`contrastive_learning_weight`**:  
-Defines the weight assigned to the contrastive loss component during training. Higher values emphasize the contrastive loss more.
-
-- **`temperature`**:
-Specifies the temperature parameter for scaling logits in the contrastive loss computation. Lower values make the model more confident in its predictions.
-
-
-You can adjust these parameters in the `config.json` file to fine-tune the model behavior and experiment settings.
-
----
-
-### Hyperparameter Tuning and Experiment Results in Weights & Biases
-Most of the experiment results for BERT-based approaches use default hyperparameters from Hugging Face. However, we also conducted hyperparameter tuning in this project. You can explore the experiment results in Weights & Biases using the following links:
-* [Dataset Size](https://wandb.ai/hsunyu/epfl_ml_project2/sweeps/24iegrm8?nw=nwuserhsunyu)
-* [Contrastive Weight](https://wandb.ai/hsunyu/epfl_ml_project2/sweeps/7eu8aso3?nw=nwuserhsunyu)
 
 ## Citation
 If you find our work or code useful in your research, you could cite those with following Bibtex:
@@ -118,3 +82,5 @@ year={2025},
 url={https://openreview.net/forum?id=oI5tZaWkF9}
 }
 ```
+
+## Acknowledgements

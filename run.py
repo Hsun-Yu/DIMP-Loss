@@ -8,13 +8,12 @@
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
-# This code is based on the script https://github.com/huggingface/transformers/tree/main/examples/pytorch/text-classification
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-""" Finetuning the library models for sequence classification."""
+""" Finetuning the library models for sequence classification on ESUN Paraphrase Project."""
 # You can also adapt this script on your own text classification task. Pointers for this are left as comments.
 # %%
 import logging
@@ -34,8 +33,6 @@ from transformers import (
     AutoConfig,
     AutoModelForSequenceClassification,
     AutoTokenizer,
-    RobertaForSequenceClassification,
-    BertForSequenceClassification,
     DataCollatorWithPadding,
     EvalPrediction,
     HfArgumentParser,
@@ -52,7 +49,7 @@ from datetime import datetime
 import json
 import pandas as pd
 
-from models import MyBertForSequenceClassification, MyNewBertForSequenceClassification, MyNewRobertaForSequenceClassification
+from models import MyBertForSequenceClassification, MyNewBertForSequenceClassification
 
 logger = logging.getLogger(__name__)
 
@@ -162,18 +159,7 @@ class DataTrainingArguments:
     twomodelloss_wandb_model3: Optional[str] = field(
         default=None, metadata={"help":"use wandb model"}
     )
-    
-    contrastive_learning: Optional[bool] = field(
-        default=False, metadata={"help":"use contrastive learning"}
-    )
-    
-    temperature: Optional[float] = field(
-        default=0.05, metadata={"help":"temperature for contrastive learning"}
-    )
-    
-    contrastive_learning_weight: Optional[float] = field(
-        default=0.1, metadata={"help":"contrastive learning weight"}
-    )
+
     # def __post_init__(self):
     #     if self.dataset_name is not None:
     #         pass
@@ -251,8 +237,8 @@ def main():
         use_json_config_name = os.path.abspath(sys.argv[1])
     elif len(sys.argv) == 1:
         # Only read the config file
-        model_args, data_args, training_args = parser.parse_json_file(json_file="config.json")
-        use_json_config_name = "config.json"
+        model_args, data_args, training_args = parser.parse_json_file(json_file="./configs/config.json")
+        use_json_config_name = "./configs/config.json"
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
         
@@ -269,6 +255,41 @@ def main():
         tags = [cut_part, model_args.model_name_or_path]
     else:
         tags = [data_args.wandb_dataset, model_args.model_name_or_path]
+        
+    if data_args.wandb_dataset:
+        if "clinc_oos_imbalanced" in data_args.wandb_dataset:
+            tags.append("clinc_oos_imbalanced")
+        if "clinc_oos_small" in data_args.wandb_dataset:
+            tags.append("clinc_oos_small")
+        if "mrpc" in data_args.wandb_dataset:
+            tags.append("mrpc")
+        if "snli" in data_args.wandb_dataset:
+            tags.append("snli")
+        if "financial_phrasebank" in data_args.wandb_dataset:
+            tags.append("financial_phrasebank")
+            
+        if "sub_go_emotions" in data_args.wandb_dataset:
+            tags.append("sub_go_emotions")
+        elif "go_emotions" in data_args.wandb_dataset:
+            tags.append("go_emotions")
+            
+        if "reddit_emotions" in data_args.wandb_dataset:
+            tags.append("reddit_emotions")
+        if "tweet_irony" in data_args.wandb_dataset:
+            tags.append("tweet_irony")
+        if "AG_news" in data_args.wandb_dataset:
+            tags.append("AG_news")
+        if "zero-shot" in data_args.wandb_dataset:
+            tags.append("zero-shot")
+        if "few-shot" in data_args.wandb_dataset:
+            tags.append("few-shot")
+            
+    if data_args.wandb_augmented_dataset:
+        tags.append("DA")
+        if "paraphrase" in data_args.wandb_augmented_dataset:
+            tags.append("paraphrase")
+        if "induction" in data_args.wandb_augmented_dataset:
+            tags.append("induction")
     
     tags.append(model_args.problem_type)
     
@@ -281,7 +302,7 @@ def main():
     
     run = wandb.init(
         name=data_args.name,
-        project="epfl_ml_project2",
+        project="NLP_Data_Augmentation",
         anonymous="allow",
         tags=tags,
         job_type="run",
@@ -310,6 +331,7 @@ def main():
         
     if data_args.use_wandb_dataset:
         # download the dataset from wandb
+        print(data_args.wandb_dataset)
         dataset = run.use_artifact(data_args.wandb_dataset)
         dataset_dir = dataset.download()
         if data_args.train_file is not None:
@@ -346,7 +368,8 @@ def main():
                 data_args.validation_file = os.path.join(dataset_dir, data_args.validation_file)
         else:
             # find the file name of the directory and include 'dev' or 'valid'
-            data_args.validation_file = os.path.join(dataset_dir, [f for f in os.listdir(dataset_dir) if 'dev' in f or 'valid' in f or 'val' in f][0])
+            data_args.validation_file = os.path.join(dataset_dir, [f for f in os.listdir(dataset_dir) if 'dev' in f or 'valid' in f][0])
+            
         if data_args.test_file is not None:
             if type(data_args.test_file) == list:
                 data_args.test_file = [os.path.join(dataset_dir, f) for f in data_args.test_file]
@@ -426,6 +449,7 @@ def main():
                     "validation": data_args.validation_file}
     else:
         data_files = {"train": data_args.train_file, "validation": data_args.validation_file}
+
     # Get the test dataset: you can provide your own CSV/JSON test file (see below)
     # when you use `do_predict` without specifying a GLUE benchmark task.
     if training_args.do_predict:
@@ -457,7 +481,6 @@ def main():
             "csv",
             data_files=data_files,
             cache_dir=model_args.cache_dir,
-            use_auth_token=True if model_args.use_auth_token else None,
         )
     else:
         # Loading a dataset from local json files
@@ -476,7 +499,7 @@ def main():
     else:
         # A useful fast method:
         # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.unique
-        label_list = raw_datasets["train"].unique("label") + raw_datasets["validation"].unique("label")
+        label_list = raw_datasets["train"].unique("label") + raw_datasets["validation"].unique("label") + raw_datasets["test"].unique("label")
         label_list = list(set(label_list))
         label_list.sort()  # Let's sort it for determinism
         num_labels = len(label_list)
@@ -502,119 +525,53 @@ def main():
         revision=model_args.model_revision,
         use_auth_token=True if model_args.use_auth_token else None,
     )
+    model = MyNewBertForSequenceClassification.from_pretrained(
+        model_args.model_name_or_path,
+        from_tf=bool(".ckpt" in model_args.model_name_or_path),
+        config=config,
+        cache_dir=model_args.cache_dir,
+        revision=model_args.model_revision,
+        use_auth_token=True if model_args.use_auth_token else None,
+        ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
+    )
     
-    # check if the model is a bert model or roberta model
-    if config.model_type == "bert":
-        model = MyNewBertForSequenceClassification.from_pretrained(
-            model_args.model_name_or_path,
-            from_tf=bool(".ckpt" in model_args.model_name_or_path),
-            config=config,
-            cache_dir=model_args.cache_dir,
-            revision=model_args.model_revision,
-            use_auth_token=True if model_args.use_auth_token else None,
-            ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
-        )
-    else:
-        model = MyNewRobertaForSequenceClassification.from_pretrained(
-            model_args.model_name_or_path,
-            from_tf=bool(".ckpt" in model_args.model_name_or_path),
-            config=config,
-            cache_dir=model_args.cache_dir,
-            revision=model_args.model_revision,
-            use_auth_token=True if model_args.use_auth_token else None,
-            ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
-        )
-
-    model.tokenizer = tokenizer
-
-    # for contrastive learning
-    model.contrastive_learning = data_args.contrastive_learning
-    model.temperature = data_args.temperature
-    model.contrastive_learning_weight = data_args.contrastive_learning_weight
     # Model 2
     if data_args.twomodelloss_wandb_model2:
-        model2_config = AutoConfig.from_pretrained(
-            data_args.twomodelloss_wandb_model2,
-            num_labels=num_labels,
-            cache_dir=model_args.cache_dir,
-            revision=model_args.model_revision,
-            use_auth_token=True if model_args.use_auth_token else None,
-        )
-        model2_tokenizer = AutoTokenizer.from_pretrained(
-            data_args.twomodelloss_wandb_model2,
-            cache_dir=model_args.cache_dir,
-            use_fast=model_args.use_fast_tokenizer,
-            revision=model_args.model_revision,
-            use_auth_token=True if model_args.use_auth_token else None,
-        )
         print(data_args.twomodelloss_wandb_model2)
-        
-        if model2_config.model_type == "bert":
-            model2 = MyBertForSequenceClassification.from_pretrained(
-                data_args.twomodelloss_wandb_model2,
-                from_tf=bool(".ckpt" in data_args.twomodelloss_wandb_model2),
-                config=model2_config,
-                cache_dir=model_args.cache_dir,
-                revision=model_args.model_revision,
-                use_auth_token=True if model_args.use_auth_token else None,
-                ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
-            )
-        else:
-            model2 = RobertaForSequenceClassification.from_pretrained(
-                data_args.twomodelloss_wandb_model2,
-                from_tf=bool(".ckpt" in data_args.twomodelloss_wandb_model2),
-                config=model2_config,
-                cache_dir=model_args.cache_dir,
-                revision=model_args.model_revision,
-                use_auth_token=True if model_args.use_auth_token else None,
-                ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
-            )
+        model2 = MyBertForSequenceClassification.from_pretrained(
+            data_args.twomodelloss_wandb_model2,
+            from_tf=bool(".ckpt" in data_args.twomodelloss_wandb_model2),
+            config=config,
+            cache_dir=model_args.cache_dir,
+            revision=model_args.model_revision,
+            use_auth_token=True if model_args.use_auth_token else None,
+            ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
+        )
         
         model.model2 = model2
-        model.model2_tokenizer = model2_tokenizer
         
     # Model 3
     if data_args.twomodelloss_wandb_model3:
-        model3_config = AutoConfig.from_pretrained(
-            data_args.twomodelloss_wandb_model3,
-            num_labels=num_labels,
-            cache_dir=model_args.cache_dir,
-            revision=model_args.model_revision,
-            use_auth_token=True if model_args.use_auth_token else None,
-        )
-        model3_tokenizer = AutoTokenizer.from_pretrained(
-            data_args.twomodelloss_wandb_model3,
-            cache_dir=model_args.cache_dir,
-            use_fast=model_args.use_fast_tokenizer,
-            revision=model_args.model_revision,
-            use_auth_token=True if model_args.use_auth_token else None,
-        )
         print(data_args.twomodelloss_wandb_model3)
-        
-        if model3_config.model_type == "bert":
-            model3 = MyBertForSequenceClassification.from_pretrained(
-                data_args.twomodelloss_wandb_model3,
-                from_tf=bool(".ckpt" in data_args.twomodelloss_wandb_model3),
-                config=model3_config,
-                cache_dir=model_args.cache_dir,
-                revision=model_args.model_revision,
-                use_auth_token=True if model_args.use_auth_token else None,
-                ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
-            )
-        else:
-            model3 = RobertaForSequenceClassification.from_pretrained(
-                data_args.twomodelloss_wandb_model3,
-                from_tf=bool(".ckpt" in data_args.twomodelloss_wandb_model3),
-                config=model3_config,
-                cache_dir=model_args.cache_dir,
-                revision=model_args.model_revision,
-                use_auth_token=True if model_args.use_auth_token else None,
-                ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
-            )
+        model3 = MyBertForSequenceClassification.from_pretrained(
+            data_args.twomodelloss_wandb_model3,
+            from_tf=bool(".ckpt" in data_args.twomodelloss_wandb_model3),
+            config=config,
+            cache_dir=model_args.cache_dir,
+            revision=model_args.model_revision,
+            use_auth_token=True if model_args.use_auth_token else None,
+            ignore_mismatched_sizes=model_args.ignore_mismatched_sizes,
+        )
         
         model.model3 = model3
-        model.model3_tokenizer = model3_tokenizer
-    sentence1_key, sentence2_key = "sentence1", None
+
+    # Preprocessing the raw_datasets
+    # Again, we try to have some nice defaults but don't hesitate to tweak to your use case.
+    non_label_column_names = [name for name in raw_datasets["train"].column_names if name != "label"]
+    if len(non_label_column_names) >= 2:
+        sentence1_key, sentence2_key = non_label_column_names[:2]
+    else:
+        sentence1_key, sentence2_key = non_label_column_names[0], None
 
     # Padding strategy
     if data_args.pad_to_max_length:
@@ -706,15 +663,13 @@ def main():
             logger.info(f"Sample {index} of the training set: {train_dataset[index]}.")
 
     # Get the metric function    
-    acc_metrics = evaluate.load("accuracy", cache_dir=model_args.cache_dir)
-    f1_metric = evaluate.load("f1")
+    glue_compute_metrics = evaluate.load('glue', 'mnli_mismatched')
     # You can define your custom compute_metrics function. It takes an `EvalPrediction` object (a namedtuple with a
     # predictions and label_ids field) and has to return a dictionary string to float.
     def compute_metrics(p: EvalPrediction):
         preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
         preds = np.squeeze(preds) if is_regression else np.argmax(preds, axis=1)
-        result = acc_metrics .compute(predictions=preds, references=p.label_ids)
-        f1_results = f1_metric.compute(predictions=preds, references=p.label_ids, average="macro")
+        result = glue_compute_metrics.compute(predictions=preds, references=p.label_ids)
         
         # cross entropy
         preds = p.predictions[0] if isinstance(p.predictions, tuple) else p.predictions
@@ -724,10 +679,13 @@ def main():
         labels = p.label_ids
         cross_entropy = 0
         for i in range(len(labels)):
+            # print(preds[i])
+            # print(labels[i])
+            # print(preds[i][labels[i]])
             cross_entropy += -np.log(preds[i][labels[i]])
         cross_entropy = cross_entropy / len(labels)
-        
-        result["f1"] = f1_results["f1"]
+        # print("cross_entropy")
+        # print(cross_entropy)
         result["cross_entropy"] = cross_entropy
         return result
     
@@ -814,10 +772,12 @@ def main():
             
             # save predictions results to data frame
             result_df = pd.DataFrame({'input_text': predict_dataset[sentence1_key],
-                               'label': labels_text, 
-                               'prediction': predictions_text})
+                               'label': labels, 
+                               'prediction': predictions,
+                               'label_text': labels_text, 
+                               'prediction_text': predictions_text})
             if index == 0:
-                result_df.to_csv(os.path.join(output_dir, f"predict_results.csv"))
+                result_df.to_csv(os.path.join(output_dir, f"predict_results.csv"), index=False)
                 # save csv to wandb
                 result_art = wandb.Artifact(name=f"{data_args.name}_predict_results", type="predict_results")
                 result_art.add_file(os.path.join(output_dir, f"predict_results.csv"))
@@ -828,17 +788,20 @@ def main():
                 run.log(metrics)
                 
                 output_predict_file = os.path.join(output_dir, f"predict_results.txt")
+                
+                # calculate accuracy for each class
+                for i in range(len(label_list)):
+                    class_text = label_list[i]
+                    class_label_index = [i for i, x in enumerate(labels_text) if x == class_text]
+                    class_prediction = [predictions[i] for i in class_label_index if predictions_text[i] == class_text]
+                    class_label = [labels[i] for i in class_label_index if labels_text[i] == class_text]
+                    if len(class_label) == 0:
+                        class_accuracy = -1
+                    else:
+                        class_accuracy = len(class_prediction) / len(class_label)
+                    key = 'accuracy_on_' + str(class_text)
+                    run.log({key: class_accuracy})
                     
-                # output submission file (only Id,Prediction)
-                if data_args.test_file is not None:
-                    output_test_file = os.path.join(output_dir, f"test_submission.txt")
-                    with open(output_test_file, "w") as f:
-                        f.write("Id,Prediction\n")
-                        for i, pred in enumerate(predictions_text):
-                            f.write(f"{i+1},{pred}\n")
-                run.log_artifact(output_test_file)
-                
-                
             else:
                 result_df.to_csv(os.path.join(output_dir, f"predict_results_{index}.csv"), index=False)
                 # save csv to wandb

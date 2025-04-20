@@ -93,7 +93,7 @@ python run.py configs/config_baseline.json
 - **`twomodelloss_wandb_model2`**:  
   Refers to the W&B artifact for the quality checker model used in DIMP-Loss training. Example: `hsunyu/NLP_Data_Augmentation/only_valid_glue_mrpc_bert:v0`.
 
-  - **`twomodelloss_wandb_model3`**:  
+- **`twomodelloss_wandb_model3`**:  
   Refers to the W&B artifact for the quality checker model used in DIMP-Loss training. Example: `hsunyu/NLP_Data_Augmentation/few-shot_glue_mrpc_bert_5:v0`.
 
 - **`per_device_train_batch_size`**:  

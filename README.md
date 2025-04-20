@@ -117,7 +117,7 @@ url={https://openreview.net/forum?id=oI5tZaWkF9}
 ```
 
 ## Acknowledgements
-Apart from the individuals acknowledged in the paper, we would also like to extend our sincere gratitude to [agbld](https://github.com/agbld) (Chia-Yu Yeh) for their invaluable contributions, particularly for providing essential computational resources and support for this release.
+Apart from the individuals and organisations acknowledged in the paper, we would also like to extend our sincere gratitude to [agbld](https://github.com/agbld) (Chia-Yu Yeh) for their invaluable contributions, particularly for providing essential computational resources and support for this release.
 
 
 

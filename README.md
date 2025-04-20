@@ -85,16 +85,16 @@ python run.py configs/config_baseline.json
 
 - **`wandb_dataset`**:  
   Specifies the W&B dataset artifact name for training and evaluation. Examples:
-  - `hsunyu/NLP_Data_Augmentation/datapoint_induction_glue_mrpc:v0`: LLM-generated data for MRPC benchmark.
+  - `hsunyu/DIMP-Loss/quality-checker_glue_mrpc_bert:v0`: LLM-generated data for MRPC benchmark.
 
 - **`use_wandb_model`**:  
   Boolean indicating whether to load a pretrained model from a W&B artifact. Useful for reproducibility. (This one must be set to `True` in this repo.)
 
 - **`twomodelloss_wandb_model2`**:  
-  Refers to the W&B artifact for the quality checker model used in DIMP-Loss training. Example: `hsunyu/NLP_Data_Augmentation/only_valid_glue_mrpc_bert:v0`.
+  Refers to the W&B artifact for the quality checker model used in DIMP-Loss training. Example: `hsunyu/DIMP-Loss/quality-checker_glue_mrpc_bert:v0`.
 
 - **`twomodelloss_wandb_model3`**:  
-  Refers to the W&B artifact for the quality checker model used in DIMP-Loss training. Example: `hsunyu/NLP_Data_Augmentation/few-shot_glue_mrpc_bert_5:v0`.
+  Refers to the W&B artifact for the quality checker model used in DIMP-Loss training. Example: `hsunyu/DIMP-Loss/diversity-checker_IMP_glue_mrpc_bert_5:v1`.
 
 - **`per_device_train_batch_size`**:  
   Defines the batch size per device during training. Default: `128`.

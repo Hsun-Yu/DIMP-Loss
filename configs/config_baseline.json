@@ -23,7 +23,7 @@
     "test_file": null,
     "name": null,
     "use_wandb_dataset": true,
-    "wandb_dataset": "hsunyu/NLP_Data_Augmentation/datapoint_induction_glue_mrpc:v0",
+    "wandb_dataset": "hsunyu/DIMP-Loss/synthetic_few-shot_glue_mrpc:v0",
     "wandb_augmented_dataset": null,
     "wandb_generalization_dataset": null,
     "save_model": false,

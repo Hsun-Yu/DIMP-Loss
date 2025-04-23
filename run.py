@@ -49,7 +49,7 @@ from datetime import datetime
 import json
 import pandas as pd
 
-from models import MyBertForSequenceClassification, MyNewBertForSequenceClassification
+from models import MyNewBertForSequenceClassification
 
 logger = logging.getLogger(__name__)
 
@@ -152,11 +152,10 @@ class DataTrainingArguments:
         default=True, metadata={"help":"save model"}
     )
     
-    twomodelloss_wandb_model2: Optional[str] = field(
+    quality_checker_model: Optional[str] = field(
         default=None, metadata={"help":"use wandb model"}
     )
-    
-    twomodelloss_wandb_model3: Optional[str] = field(
+    diversity_checker_model: Optional[str] = field(
         default=None, metadata={"help":"use wandb model"}
     )
 
@@ -237,8 +236,8 @@ def main():
         use_json_config_name = os.path.abspath(sys.argv[1])
     elif len(sys.argv) == 1:
         # Only read the config file
-        model_args, data_args, training_args = parser.parse_json_file(json_file="./configs/config.json")
-        use_json_config_name = "./configs/config.json"
+        model_args, data_args, training_args = parser.parse_json_file(json_file="./configs/config_DIMP.json")
+        use_json_config_name = "./configs/config_DIMP.json"
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
         
@@ -393,15 +392,15 @@ def main():
         model_dir = model.download()
         model_args.model_name_or_path = model_dir
     
-    if data_args.twomodelloss_wandb_model2:
-        model2 = run.use_artifact(data_args.twomodelloss_wandb_model2)
+    if data_args.quality_checker_model:
+        model2 = run.use_artifact(data_args.quality_checker_model)
         model2_dir = model2.download()
-        data_args.twomodelloss_wandb_model2 = model2_dir
+        data_args.quality_checker_model = model2_dir
         
-    if data_args.twomodelloss_wandb_model3:
-        model3 = run.use_artifact(data_args.twomodelloss_wandb_model3)
+    if data_args.diversity_checker_model:
+        model3 = run.use_artifact(data_args.diversity_checker_model)
         model3_dir = model3.download()
-        data_args.twomodelloss_wandb_model3 = model3_dir
+        data_args.diversity_checker_model = model3_dir
 
     run.config.update(model_args)
     run.config.update(data_args)
@@ -536,11 +535,11 @@ def main():
     )
     
     # Model 2
-    if data_args.twomodelloss_wandb_model2:
-        print(data_args.twomodelloss_wandb_model2)
-        model2 = MyBertForSequenceClassification.from_pretrained(
-            data_args.twomodelloss_wandb_model2,
-            from_tf=bool(".ckpt" in data_args.twomodelloss_wandb_model2),
+    if data_args.quality_checker_model:
+        print(data_args.quality_checker_model)
+        model2 = MyNewBertForSequenceClassification.from_pretrained(
+            data_args.quality_checker_model,
+            from_tf=bool(".ckpt" in data_args.quality_checker_model),
             config=config,
             cache_dir=model_args.cache_dir,
             revision=model_args.model_revision,
@@ -551,11 +550,11 @@ def main():
         model.model2 = model2
         
     # Model 3
-    if data_args.twomodelloss_wandb_model3:
-        print(data_args.twomodelloss_wandb_model3)
-        model3 = MyBertForSequenceClassification.from_pretrained(
-            data_args.twomodelloss_wandb_model3,
-            from_tf=bool(".ckpt" in data_args.twomodelloss_wandb_model3),
+    if data_args.diversity_checker_model:
+        print(data_args.diversity_checker_model)
+        model3 = MyNewBertForSequenceClassification.from_pretrained(
+            data_args.diversity_checker_model,
+            from_tf=bool(".ckpt" in data_args.diversity_checker_model),
             config=config,
             cache_dir=model_args.cache_dir,
             revision=model_args.model_revision,

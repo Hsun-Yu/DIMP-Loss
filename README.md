@@ -44,18 +44,18 @@ pip install scikit-learn
 
 ## Fine-tuning with DIMP-Loss for MRPC
 
-To train the BERT model with DIMP-Loss, you can either use your own trained quality checker model or the one we provide. If using your own model, update the `twomodelloss_wandb_model2` parameter with the corresponding W&B artifact name. Ensure the quality checker model is uploaded as an artifact to W&B.
+To train the BERT model with DIMP-Loss, you can either use your own trained quality checker model or the one we provide. If using your own model, update the `quality_checker_model` parameter with the corresponding W&B artifact name. Ensure the quality checker model is uploaded as an artifact to W&B.
 
 Alternatively, to use our provided quality checker model, simply run:
 
 ```bash
 python run.py configs/config_DIMP.json
 ```
-This command will automatically download the quality checker model from W&B and train the BERT model with DIMP-Loss using the configuration specified in `configs/config_DIMP.json`.
+This command will automatically download the quality checker model from W&B and train the BERT model with DIMP-Loss using the configuration specified in `configs/config_DIMP.json`. During training, a W&B link will be generated, enabling you to monitor the training process and results in real time. You can either log in to your W&B account or use anonymous mode to access the run. For example, a typical run might look like this: [Example Run](https://wandb.ai/hsunyu/DIMP-Loss/runs/5aj15ne4/overview).
 
 ## Fine-tuning with IMP-Loss for MRPC
 
-To use your own trained models as the quality checker and diversity checker, update the `twomodelloss_wandb_model2` and `twomodelloss_wandb_model3` parameters, respectively. Ensure both models are uploaded as artifacts to W&B. 
+To use your own trained models as the quality checker and diversity checker, update the `quality_checker_model` and `diversity_checker_model` parameters, respectively. Ensure both models are uploaded as artifacts to W&B. 
 
 Alternatively, to use our provided quality checker and diversity checker models, run the following command:
 
@@ -63,7 +63,7 @@ Alternatively, to use our provided quality checker and diversity checker models,
 python run.py configs/config_IMP.json
 ```
 
-This command will automatically download the provided quality checker and diversity checker models from W&B and train the BERT model with IMP-Loss using the configuration specified in `configs/config_IMP.json`.
+This command will automatically download the provided quality checker and diversity checker models from W&B and train the BERT model with IMP-Loss using the configuration specified in `configs/config_IMP.json`. During training, a W&B link will be generated, enabling you to monitor the training process and results in real time. You can either log in to your W&B account or use anonymous mode to access the run. For example, a typical run might look like this: [Example Run](https://wandb.ai/hsunyu/DIMP-Loss/runs/k8b2aa9b/overview).
 
 ## Fine-tuning with CE-Loss (baseline) for MRPC
 
@@ -80,8 +80,8 @@ python run.py configs/config_baseline.json
 - **`problem_type`**:  
   Defines the task type. Examples include:
   - `"single_label_classification"`: For text classification with cross-entropy loss (CE-Loss).
-  - `"single_label_classification_myloss_v2"`: For the DIMP-Loss approach.
-  - `"single_label_classification_myloss_importance"`: For the IMP-Loss approach.
+  - `"single_label_classification_dimp"`: For the DIMP-Loss approach.
+  - `"single_label_classification_imp"`: For the IMP-Loss approach.
 
 - **`wandb_dataset`**:  
   Specifies the W&B dataset artifact name for training and evaluation. Examples:
@@ -90,10 +90,10 @@ python run.py configs/config_baseline.json
 - **`use_wandb_model`**:  
   Boolean indicating whether to load a pretrained model from a W&B artifact. Useful for reproducibility. (This one must be set to `True` in this repo.)
 
-- **`twomodelloss_wandb_model2`**:  
+- **`quality_checker_model`**:  
   Refers to the W&B artifact for the quality checker model used in DIMP-Loss training. Example: `hsunyu/DIMP-Loss/quality-checker_glue_mrpc_bert:v0`.
 
-- **`twomodelloss_wandb_model3`**:  
+- **`diversity_checker_model`**:  
   Refers to the W&B artifact for the quality checker model used in DIMP-Loss training. Example: `hsunyu/DIMP-Loss/diversity-checker_IMP_glue_mrpc_bert_5:v1`.
 
 - **`per_device_train_batch_size`**:  
